@@ -3,7 +3,7 @@
 A_IconTip := "Screen Off"
 
 ; --- Tray icon (Windows built-in) ---
-TraySetIcon("C:\Windows\System32\imageres.dll", 110, true)  ; true = freeze icon
+try TraySetIcon(A_WinDir "\System32\imageres.dll", 110, true)  ; true = freeze icon
 
 ; --- Tray menu ---
 menuText := "Screen off`tWin+Shift+M"
@@ -17,12 +17,10 @@ A_TrayMenu.ClickCount := 1                 ; single left-click = screen off
 #+m::ScreenOff()                           ; Win+Shift+M
 
 ScreenOff(*) {
-    Sleep 300
-    KeyWait "LWin"                         ; wait for releases so the
-    KeyWait "Shift"                        ; key-up doesn't wake the screen
-    DllCall("user32\SendMessageW"
-        , "ptr", 0xFFFF                    ; HWND_BROADCAST
-        , "uint", 0x0112                   ; WM_SYSCOMMAND
-        , "ptr", 0xF170                    ; SC_MONITORPOWER
-        , "ptr", 2)                        ; 2 = off
+    ; wait for every trigger key/button so its release doesn't wake the screen
+    for key in ["LWin", "RWin", "Shift", "m", "LButton"]
+        KeyWait key, "T2"
+    Sleep 1000                             ; let trailing input settle
+    ; post to one window instead of a blocking broadcast: a hung app can't stall us
+    try PostMessage 0x0112, 0xF170, 2,, "Program Manager"  ; WM_SYSCOMMAND, SC_MONITORPOWER, 2 = off
 }
